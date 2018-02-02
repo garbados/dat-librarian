@@ -1,7 +1,10 @@
 # DatLibrarian
 
-[![Stability](https://img.shields.io/badge/stability-stable-green.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
+[![Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
 [![JS Standard Style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
+[![Build Status](https://img.shields.io/travis/garbados/dat-librarian/master.svg?style=flat-square)](https://travis-ci.org/garbados/dat-librarian)
+[![Coverage Status](https://img.shields.io/coveralls/github/garbados/dat-librarian/master.svg?style=flat-square)](https://coveralls.io/github/garbados/dat-librarian?branch=master)
+
 
 A dedicated [Dat](https://datproject.org/) peer.
 
