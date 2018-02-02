@@ -50,6 +50,12 @@ class DatLibrarian {
    * for convenience's sake.
    * @param  {String | Buffer} link Link to a Dat archive
    * @return {Promise<Buffer>}      Key of that Dat archive
+   * @example
+   *
+   * DatLibrarian.resolve('garbados.hashbase.io').then((key) => {
+   *   console.log(key)
+   *   > 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
+   * })
    */
   static resolve (link) {
     return new Promise(function (resolve, reject) {

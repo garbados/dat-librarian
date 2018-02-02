@@ -1,26 +1,40 @@
 # DatLibrarian
 
 [![Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
-[![JS Standard Style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
+[![NPM Version](https://img.shields.io/npm/v/mastermind-game.svg?style=flat-square)](https://www.npmjs.com/package/mastermind-game)
 [![Build Status](https://img.shields.io/travis/garbados/dat-librarian/master.svg?style=flat-square)](https://travis-ci.org/garbados/dat-librarian)
 [![Coverage Status](https://img.shields.io/coveralls/github/garbados/dat-librarian/master.svg?style=flat-square)](https://coveralls.io/github/garbados/dat-librarian?branch=master)
+[![JS Standard Style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
 
+A dedicated [Dat](https://datproject.org/) peer. Use DatLibrarian to store and peer many Dat archives. Similar to [hypercore-archiver](https://github.com/mafintosh/hypercore-archiver).
 
-A dedicated [Dat](https://datproject.org/) peer.
-
-## Install
-
-Install DatLibrarian and its dependencies with [npm](<>):
-
-```bash
-npm i -S dat-librarian
-```
-
-Then you can use it in your project:
+For example:
 
 ```javascript
 const DatLibrarian = require('dat-librarian')
-const librarian = new Datlibrarian({ dir: '.dats' })
+const librarian = new DatLibrarian({ dir: '.dats' })
+console.log(librarian.keys)
+> [] // no known archives yet
+librarian
+  // load pre-existing archives
+  .load()
+  // promises!
+  .then(() => {
+    // use keys or links per dat-link-resolve
+    return librarian.add('garbados.hashbase.io')
+  })
+  .then(() => {
+    console.log(librarian.keys)
+    > ['c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957']
+  })
+```
+
+## Install
+
+Install DatLibrarian and its dependencies with [npm](https://www.npmjs.com/):
+
+```bash
+npm i -S dat-librarian
 ```
 
 ## Usage
@@ -134,6 +148,15 @@ for convenience's sake.
 **Parameters**
 
 -   `link` **([String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Buffer](https://nodejs.org/api/buffer.html))** Link to a Dat archive
+
+**Examples**
+
+```javascript
+DatLibrarian.resolve('garbados.hashbase.io').then((key) => {
+  console.log(key)
+  > 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
+})
+```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** Key of that Dat archive
 
