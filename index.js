@@ -194,7 +194,8 @@ class DatLibrarian {
    */
   close () {
     log('Closing the librarian...')
-    const tasks = Object.values(this.dats).map((dat) => {
+    const tasks = Object.keys(this.dats).map((key) => {
+      const dat = this.dats[key]
       return new Promise((resolve) => {
         dat.close(resolve)
       })
