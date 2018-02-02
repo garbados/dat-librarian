@@ -25,6 +25,7 @@ const fs = require('fs')
 const mkdirp = require('mkdirp')
 const path = require('path')
 const rimraf = require('rimraf')
+const { EventEmitter } = require('events')
 
 const DAT_KEY_REGEX = /^([0-9a-f]{64})/i
 
@@ -44,7 +45,7 @@ function log () {
  * @param  {Object} options.dat Options object passed to Dat()
  * @param  {Object} options.net Options object passed to dat.joinNetwork()
  */
-class DatLibrarian {
+class DatLibrarian extends EventEmitter {
   /**
    * Promification of dat-link-resolve
    * for convenience's sake.
@@ -67,6 +68,7 @@ class DatLibrarian {
   }
 
   constructor ({ dir, dat, net }) {
+    super()
     log('Creating new librarian with options %j', { dir, dat, net })
     assert(dir, 'A directory is required for storing archives.')
     this.dir = dir
@@ -80,6 +82,11 @@ class DatLibrarian {
    * Load Dat archives into cache by checking the working
    * directory for existing archives.
    * @return {Promise<Array>} A promise that resolves once any existing archives have been loaded into the cache.
+   * @example
+   *
+   * librarian.load().then(() => {
+   *   ...
+   * })
    */
   load () {
     log('Loading existing archives...')
@@ -104,6 +111,11 @@ class DatLibrarian {
    * Get an archive from the cache by link.
    * @param  {String | Buffer} link Link to a Dat archive.
    * @return {Promise<Dat>}         Promise that resolves to a Dat archive.
+   * @example
+   *
+   * librarian.get('garbados.hashbase.io').then((dat) => {
+   *   ...
+   * })
    */
   get (link) {
     log('Getting archive from %s', link)
@@ -127,6 +139,11 @@ class DatLibrarian {
    * to complete.
    * @param {String | Buffer} link Link to a Dat archive.
    * @return {Promise} A promise that resolves once the archive has been added to the cache.
+   * @example
+   *
+   * librarian.add('garbados.hashbase.io').then((dat) => {
+   *   ...
+   * })
    */
   add (link) {
     log('Adding archive from %s', link)
@@ -141,8 +158,34 @@ class DatLibrarian {
           Dat(datDir, datOptions, (err, dat) => {
             if (err) return reject(err)
             this.dats[key] = dat
-            dat.joinNetwork(this.netOptions)
+            dat.joinNetwork(this.netOptions, () => {
+              /**
+               * Event emitted once an archive has
+               * completed its first round of peer discovery.
+               *
+               * @event join
+               * @type {Dat}
+               * @example
+               *
+               * librarian.on('join', (dat) => {
+               *   ...
+               * })
+               */
+              this.emit('join', dat)
+            })
             log('Archive %s added.', link)
+            /**
+             * Event emitted when an archive is added.
+             *
+             * @event add
+             * @type {Dat}
+             * @example
+             *
+             * librarian.on('add', (dat) => {
+             *   ...
+             * })
+             */
+            this.emit('add', dat)
             return resolve(dat)
           })
         })
@@ -154,6 +197,11 @@ class DatLibrarian {
    * Remove an archive from the cache and the working directory.
    * @param  {String | Buffer} link Link to a Dat archive.
    * @return {Promise} A promise that resolves once the archive has been removed.
+   * @example
+   *
+   * librarian.remove('garbados.hashbase.io').then(() => {
+   *   ...
+   * })
    */
   remove (link) {
     log('Removing archive %s', link)
@@ -169,9 +217,21 @@ class DatLibrarian {
           delete this.dats[key]
           const datDir = path.join(this.dir, key)
           log('Removing archive %s files', link)
-          rimraf(datDir, function (err) {
+          rimraf(datDir, (err) => {
             if (err) return reject(err)
-            else return resolve()
+            /**
+             * Event emitted once an archive has been removed.
+             *
+             * @event remove
+             * @type {String | Buffer} The link used to remove the archive.
+             * @example
+             *
+             * librarian.on('remove', (link) => {
+             *   ...
+             * })
+             */
+            this.emit('remove', link)
+            return resolve()
           })
         })
       })
@@ -181,6 +241,11 @@ class DatLibrarian {
   /**
    * Lists the keys in the cache.
    * @return {Array<String>} An array of all the keys in the cache.
+   * @example
+   *
+   * let keys = librarian.list()
+   * console.log(keys)
+   * > ['c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957']
    */
   list () {
     return Object.keys(this.dats)
@@ -189,6 +254,10 @@ class DatLibrarian {
   /**
    * Getter for the keys in the cache. Alias to #list()
    * @return {Array<String>} An array of all the keys in the cache.
+   * @example
+   *
+   * console.log(librarian.keys)
+   * > ['c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957']
    */
   get keys () {
     return this.list()
@@ -197,6 +266,11 @@ class DatLibrarian {
   /**
    * Close the librarian and any archives it is peering.
    * @return {Promise} Promise that resolves once all archives have closed.
+   * @example
+   *
+   * librarian.close().then(() => {
+   *   ...
+   * })
    */
   close () {
     log('Closing the librarian...')
