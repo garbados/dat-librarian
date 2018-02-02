@@ -52,6 +52,11 @@ npm i -S dat-librarian
     -   [keys](#keys)
     -   [close](#close)
     -   [resolve](#resolve)
+-   [join](#join)
+-   [add](#add-1)
+-   [remove](#remove-1)
+
+### 
 
 DatLibrarian is a dedicated [Dat](http://datproject.org/) peer similar to
 [hypercore-archiver](https://github.com/mafintosh/hypercore-archiver)
@@ -74,6 +79,8 @@ librarian
 
 ### DatLibrarian
 
+**Extends EventEmitter**
+
 Instantiate a new DatLibriarian.
 
 **Parameters**
@@ -88,6 +95,14 @@ Instantiate a new DatLibriarian.
 Load Dat archives into cache by checking the working
 directory for existing archives.
 
+**Examples**
+
+```javascript
+librarian.load().then(() => {
+  ...
+})
+```
+
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)>** A promise that resolves once any existing archives have been loaded into the cache.
 
 #### get
@@ -97,6 +112,14 @@ Get an archive from the cache by link.
 **Parameters**
 
 -   `link` **([String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Buffer](https://nodejs.org/api/buffer.html))** Link to a Dat archive.
+
+**Examples**
+
+```javascript
+librarian.get('garbados.hashbase.io').then((dat) => {
+  ...
+})
+```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;Dat>** Promise that resolves to a Dat archive.
 
@@ -110,6 +133,14 @@ to complete.
 
 -   `link` **([String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Buffer](https://nodejs.org/api/buffer.html))** Link to a Dat archive.
 
+**Examples**
+
+```javascript
+librarian.add('garbados.hashbase.io').then((dat) => {
+  ...
+})
+```
+
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** A promise that resolves once the archive has been added to the cache.
 
 #### remove
@@ -120,11 +151,27 @@ Remove an archive from the cache and the working directory.
 
 -   `link` **([String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Buffer](https://nodejs.org/api/buffer.html))** Link to a Dat archive.
 
+**Examples**
+
+```javascript
+librarian.remove('garbados.hashbase.io').then(() => {
+  ...
+})
+```
+
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** A promise that resolves once the archive has been removed.
 
 #### list
 
 Lists the keys in the cache.
+
+**Examples**
+
+```javascript
+let keys = librarian.list()
+console.log(keys)
+> ['c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957']
+```
 
 Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>** An array of all the keys in the cache.
 
@@ -132,11 +179,26 @@ Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Gl
 
 Getter for the keys in the cache. Alias to #list()
 
+**Examples**
+
+```javascript
+console.log(librarian.keys)
+> ['c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957']
+```
+
 Returns **[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>** An array of all the keys in the cache.
 
 #### close
 
 Close the librarian and any archives it is peering.
+
+**Examples**
+
+```javascript
+librarian.close().then(() => {
+  ...
+})
+```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** Promise that resolves once all archives have closed.
 
@@ -159,6 +221,43 @@ DatLibrarian.resolve('garbados.hashbase.io').then((key) => {
 ```
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** Key of that Dat archive
+
+### join
+
+Event emitted once an archive has
+completed its first round of peer discovery.
+
+**Examples**
+
+```javascript
+librarian.on('join', (dat) => {
+  ...
+})
+```
+
+### add
+
+Event emitted when an archive is added.
+
+**Examples**
+
+```javascript
+librarian.on('add', (dat) => {
+  ...
+})
+```
+
+### remove
+
+Event emitted once an archive has been removed.
+
+**Examples**
+
+```javascript
+librarian.on('remove', (link) => {
+  ...
+})
+```
 
 ## Development
 
