@@ -25,6 +25,7 @@ const fs = require('fs')
 const mkdirp = require('mkdirp')
 const path = require('path')
 const rimraf = require('rimraf')
+const { EventEmitter } = require('events')
 
 const DAT_KEY_REGEX = /^([0-9a-f]{64})/i
 
@@ -44,7 +45,7 @@ function log () {
  * @param  {Object} options.dat Options object passed to Dat()
  * @param  {Object} options.net Options object passed to dat.joinNetwork()
  */
-class DatLibrarian {
+class DatLibrarian extends EventEmitter {
   /**
    * Promification of dat-link-resolve
    * for convenience's sake.
@@ -67,6 +68,7 @@ class DatLibrarian {
   }
 
   constructor ({ dir, dat, net }) {
+    super()
     log('Creating new librarian with options %j', { dir, dat, net })
     assert(dir, 'A directory is required for storing archives.')
     this.dir = dir
@@ -141,8 +143,11 @@ class DatLibrarian {
           Dat(datDir, datOptions, (err, dat) => {
             if (err) return reject(err)
             this.dats[key] = dat
-            dat.joinNetwork(this.netOptions)
+            dat.joinNetwork(this.netOptions, () => {
+              this.emit('joined', dat)
+            })
             log('Archive %s added.', link)
+            this.emit('add', dat)
             return resolve(dat)
           })
         })
@@ -169,9 +174,10 @@ class DatLibrarian {
           delete this.dats[key]
           const datDir = path.join(this.dir, key)
           log('Removing archive %s files', link)
-          rimraf(datDir, function (err) {
+          rimraf(datDir, (err) => {
             if (err) return reject(err)
-            else return resolve()
+            this.emit('remove', key)
+            return resolve()
           })
         })
       })

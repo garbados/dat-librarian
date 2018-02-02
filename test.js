@@ -27,7 +27,14 @@ describe([name, version].join(' @ '), function () {
   })
 
   it('should handle new archives by link', function () {
-    return this.librarian.add(link)
+    return this.librarian.add(link).then(() => {
+      return new Promise((resolve) => {
+        this.librarian.once('joined', (dat) => {
+          assert(dat.network.connections.length > 0)
+          return resolve()
+        })
+      })
+    })
   })
 
   it('should have the new archive in its cache', function () {
