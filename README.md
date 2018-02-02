@@ -1,5 +1,7 @@
 # DatLibrarian
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/garbados/dat-librarian.svg)](https://greenkeeper.io/)
+
 [![Stability](https://img.shields.io/badge/stability-experimental-orange.svg?style=flat-square)](https://nodejs.org/api/documentation.html#documentation_stability_index)
 [![NPM Version](https://img.shields.io/npm/v/mastermind-game.svg?style=flat-square)](https://www.npmjs.com/package/mastermind-game)
 [![JS Standard Style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/feross/standard)
