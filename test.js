@@ -44,13 +44,13 @@ describe([name, version].join(' @ '), function () {
         throw new Error('electron is a strange omen')
       })
       .catch((e) => {
-        assert.equal(e.message, 'not found')
+        assert.strictEqual(e.message, 'not found')
       })
   })
 
   it('should remove the archive', function () {
     return this.librarian.remove(link).then(() => {
-      assert.equal(this.librarian.keys.length, 0)
+      assert.strictEqual(this.librarian.keys.length, 0)
     })
   })
 
@@ -60,7 +60,7 @@ describe([name, version].join(' @ '), function () {
     }).then(() => {
       return this.librarian.load()
     }).then(() => {
-      assert.equal(this.librarian.keys.length, 1)
+      assert.strictEqual(this.librarian.keys.length, 1)
     })
   })
 })
