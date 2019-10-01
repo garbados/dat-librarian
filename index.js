@@ -30,7 +30,7 @@ const { EventEmitter } = require('events')
 const DAT_KEY_REGEX = /^([0-9a-f]{64})/i
 
 function log () {
-  let msg = arguments[0]
+  const msg = arguments[0]
   arguments[0] = '[dat-librarian] ' + msg
   if (process.env.DEBUG || process.env.LOG) {
     console.log.apply(console, arguments)
