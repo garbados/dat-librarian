@@ -81,30 +81,29 @@ class DatLibrarian extends EventEmitter {
   /**
    * Load Dat archives into cache by checking the working
    * directory for existing archives.
-   * @return {Promise<Array>} A promise that resolves once any existing archives have been loaded into the cache.
+   * @return {Promise} A promise that resolves once any existing archives have been loaded into the cache.
    * @example
    *
    * librarian.load().then(() => {
    *   ...
    * })
    */
-  load () {
+  async load () {
     log('Loading existing archives...')
     // search for local archives
-    return new Promise((resolve, reject) => {
+    const files = await new Promise((resolve, reject) => {
       fs.readdir(this.dir, (err, files) => {
         if (err) return reject(err)
         else return resolve(files)
       })
-    }).then((files) => {
-      const tasks = files.filter((file) => {
-        return DAT_KEY_REGEX.test(file)
-      }).map((key) => {
-        log('Loading archive: %s', key)
-        return this.add(key)
-      })
-      return Promise.all(tasks)
     })
+    const keys = files.filter((file) => {
+      return DAT_KEY_REGEX.test(file)
+    })
+    for (const key of keys) {
+      log('Loading archive: %s', key)
+      await this.add(key)
+    }
   }
 
   /**
@@ -117,20 +116,19 @@ class DatLibrarian extends EventEmitter {
    *   ...
    * })
    */
-  get (link) {
+  async get (link) {
     log('Getting archive from %s', link)
     // check local cache
-    if (link in this.dats) return Promise.resolve(this.dats[link])
+    if (link in this.dats) { return this.dats[link] }
     // resolve the link, then check the cache
-    return DatLibrarian.resolve(link).then((key) => {
-      if (key in this.dats) {
-        log('Found archive %s in cache', link)
-        return this.dats[key]
-      } else {
-        log('Archive %s not found', link)
-        throw new Error('not found')
-      }
-    })
+    const key = await DatLibrarian.resolve(link)
+    if (key in this.dats) {
+      log('Found archive %s in cache', link)
+      return this.dats[key]
+    } else {
+      log('Archive %s not found', link)
+      throw new Error('not found')
+    }
   }
 
   /**
@@ -145,52 +143,52 @@ class DatLibrarian extends EventEmitter {
    *   ...
    * })
    */
-  add (link) {
+  async add (link) {
     log('Adding archive from %s', link)
-    return DatLibrarian.resolve(link).then((key) => {
-      if (key in this.dats) {
-        log('Archive %s already in cache.', link)
-        return this.dats[key]
-      } else {
-        return new Promise((resolve, reject) => {
-          const datDir = path.join(this.dir, key)
-          const datOptions = Object.assign({}, this.datOptions, { key })
-          Dat(datDir, datOptions, (err, dat) => {
-            if (err) return reject(err)
-            this.dats[key] = dat
-            dat.joinNetwork(this.netOptions, () => {
-              /**
-               * Event emitted once an archive has
-               * completed its first round of peer discovery.
-               *
-               * @event join
-               * @type {Dat}
-               * @example
-               *
-               * librarian.on('join', (dat) => {
-               *   ...
-               * })
-               */
-              this.emit('join', dat)
-            })
-            log('Archive %s added.', link)
-            /**
-             * Event emitted when an archive is added.
-             *
-             * @event add
-             * @type {Dat}
-             * @example
-             *
-             * librarian.on('add', (dat) => {
-             *   ...
-             * })
-             */
-            this.emit('add', dat)
-            return resolve(dat)
-          })
+    const key = await DatLibrarian.resolve(link)
+    if (key in this.dats) {
+      log('Archive %s already in cache.', link)
+      return this.dats[key]
+    } else {
+      const datDir = path.join(this.dir, key)
+      const datOptions = Object.assign({}, this.datOptions, { key })
+      const dat = await new Promise((resolve, reject) => {
+        Dat(datDir, datOptions, (err, dat) => {
+          if (err) return reject(err)
+          return resolve(dat)
         })
-      }
-    })
+      })
+      this.dats[key] = dat
+      dat.joinNetwork(this.netOptions, () => {
+        /**
+         * Event emitted once an archive has
+         * completed its first round of peer discovery.
+         *
+         * @event join
+         * @type {Dat}
+         * @example
+         *
+         * librarian.on('join', (dat) => {
+         *   ...
+         * })
+         */
+        this.emit('join', dat)
+      })
+      log('Archive %s added.', link)
+      /**
+       * Event emitted when an archive is added.
+       *
+       * @event add
+       * @type {Dat}
+       * @example
+       *
+       * librarian.on('add', (dat) => {
+       *   ...
+       * })
+       */
+      this.emit('add', dat)
+      return dat
+    }
   }
 
   /**
@@ -203,39 +201,41 @@ class DatLibrarian extends EventEmitter {
    *   ...
    * })
    */
-  remove (link) {
+  async remove (link) {
     log('Removing archive %s', link)
-    return DatLibrarian.resolve(link).then((key) => {
-      const dat = this.dats[key]
-      // verify that the archive exists, and thus can be deleted
-      if (!dat) throw new Error('not found')
-      return new Promise((resolve, reject) => {
-        log('Closing archive %s', link)
-        dat.close((err) => {
-          if (err) return reject(err)
-          // remove from cache
-          delete this.dats[key]
-          const datDir = path.join(this.dir, key)
-          log('Removing archive %s files', link)
-          rimraf(datDir, (err) => {
-            if (err) return reject(err)
-            /**
-             * Event emitted once an archive has been removed.
-             *
-             * @event remove
-             * @type {String | Buffer} The link used to remove the archive.
-             * @example
-             *
-             * librarian.on('remove', (link) => {
-             *   ...
-             * })
-             */
-            this.emit('remove', link)
-            return resolve()
-          })
-        })
+    const key = await DatLibrarian.resolve(link)
+    const dat = this.dats[key]
+    // verify that the archive exists, and thus can be deleted
+    if (!dat) throw new Error('not found')
+    // conclude the archive's network activity
+    await new Promise((resolve, reject) => {
+      dat.close((err) => {
+        if (err) { return reject(err) }
+        return resolve()
       })
     })
+    // remove from cache
+    delete this.dats[key]
+    const datDir = path.join(this.dir, key)
+    log('Removing archive %s files', link)
+    await new Promise((resolve, reject) => {
+      rimraf(datDir, (err) => {
+        if (err) return reject(err)
+        return resolve()
+      })
+    })
+    /**
+     * Event emitted once an archive has been removed.
+     *
+     * @event remove
+     * @type {String | Buffer} The link used to remove the archive.
+     * @example
+     *
+     * librarian.on('remove', (link) => {
+     *   ...
+     * })
+     */
+    this.emit('remove', link)
   }
 
   /**
@@ -272,15 +272,13 @@ class DatLibrarian extends EventEmitter {
    *   ...
    * })
    */
-  close () {
+  async close () {
     log('Closing the librarian...')
-    const tasks = Object.keys(this.dats).map((key) => {
-      const dat = this.dats[key]
-      return new Promise((resolve) => {
+    for (const dat of Object.values(this.dats)) {
+      await new Promise((resolve) => {
         dat.close(resolve)
       })
-    })
-    return Promise.all(tasks)
+    }
   }
 }
 
