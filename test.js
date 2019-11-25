@@ -1,25 +1,82 @@
-/* global describe, it, before, after */
+/* global describe, it, before, after, beforeEach, afterEach */
 
 'use strict'
 
 const assert = require('assert')
-const DatLibrarian = require('.')
+const fs = require('fs')
+const mkdirp = require('mkdirp')
+const nock = require('nock')
+const path = require('path')
 const rimraf = require('rimraf')
-const { name, version } = require('./package.json')
 
-describe([name, version].join(' @ '), function () {
+const DatLibrarian = require('.')
+const { name } = require('./package.json')
+
+const NOCK_DIR = '.nock'
+const RECORD_TESTS = !!process.env.RECORD_TESTS
+
+const recordOrLoadNocks = function () {
+  const titles = []
+  let test = this.currentTest
+  while (test.parent) {
+    titles.unshift(test.title)
+    if (test.parent) { test = test.parent }
+  }
+  const dir = path.join(NOCK_DIR, ...titles.slice(0, -1))
+  const name = `${titles.slice(-1)[0]}.json`
+  this._currentNock = { titles, dir, name }
+  if (RECORD_TESTS) {
+    nock.recorder.rec({
+      output_objects: true,
+      dont_print: true
+    })
+  } else {
+    try {
+      nock.load(path.join(dir, encodeURIComponent(name)))
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // no nock
+      } else {
+        throw error
+      }
+    }
+  }
+}
+
+const concludeNocks = function () {
+  if (RECORD_TESTS) {
+    // save http requests for future nocking
+    const { dir, name } = this._currentNock
+    const fixturePath = path.join(dir, encodeURIComponent(name))
+    const nockCallObjects = nock.recorder.play()
+    mkdirp.sync(dir)
+    fs.writeFileSync(fixturePath, JSON.stringify(nockCallObjects), 'utf8')
+    nock.restore()
+    nock.recorder.clear()
+  }
+}
+
+describe(name, function () {
   this.timeout(0) // haha, THE NETWORK
   const dir = 'fixtures'
   const link = 'garbados.hashbase.io'
 
   before(function () {
+    nock.disableNetConnect()
     this.librarian = new DatLibrarian({ dir })
   })
 
-  after(function () {
-    return this.librarian.close().then(() => {
-      rimraf.sync(dir)
-    })
+  after(async function () {
+    await this.librarian.close()
+    rimraf.sync(dir)
+  })
+
+  beforeEach(function () {
+    recordOrLoadNocks.call(this)
+  })
+
+  afterEach(async function () {
+    concludeNocks.call(this)
   })
 
   it('should exist', function () {

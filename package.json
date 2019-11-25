@@ -13,8 +13,9 @@
     "rimraf": "^3.0.0"
   },
   "devDependencies": {
-    "standard": "^14.3.1",
-    "mocha": "^6.2.2"
+    "mocha": "^6.2.2",
+    "nock": "^11.7.0",
+    "standard": "^14.3.1"
   },
   "author": "Diana Thayer <garbados@gmail.com>",
   "license": "Apache-2.0",
