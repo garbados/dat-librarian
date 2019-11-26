@@ -17,6 +17,7 @@
     "nock": "^11.7.0",
     "standard": "^14.3.1"
   },
+  "files": ["index.js"],
   "author": "Diana Thayer <garbados@gmail.com>",
   "license": "Apache-2.0",
   "repository": {
