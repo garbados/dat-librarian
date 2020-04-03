@@ -9,7 +9,7 @@
   "dependencies": {
     "dat-link-resolve": "^2.3.0",
     "dat-node": "^3.5.15",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.4",
     "rimraf": "^3.0.0"
   },
   "devDependencies": {
