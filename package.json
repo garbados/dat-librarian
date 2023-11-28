@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "dat-link-resolve": "^2.3.0",
-    "dat-node": "^3.5.15",
+    "dat-node": "^4.0.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^3.0.0"
   },
